@@ -9,4 +9,6 @@ use Illuminate\Support\Facades\Route;
  * This route maps the URL '/email-logs' to the 'index' method
  * of the MailLogViewerController. It is named 'email.logs.index'.
  */
-Route::get('/email-logs', [MailLogViewerController::class, 'index'])->name('email.logs.index');
+if (config('app.env') !== 'production') {
+    Route::get('/email-logs', [MailLogViewerController::class, 'index'])->name('email.logs.index');
+}
