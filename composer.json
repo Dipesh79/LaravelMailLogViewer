@@ -1,0 +1,29 @@
+{
+    "name": "dipesh79/laravel-mail-log-viewer",
+    "description": "Laravel package to view all email addresses stored in the log files, intended for development purposes only.",
+    "keywords": ["laravel", "mail", "log"],
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Dipesh79\\LaravelMailLogViewer\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Dipesh Khanal",
+            "email": "dipeshkhanal79@gmail.com",
+            "homepage": "https://khanaldipesh.com.np",
+            "role": "Maintainer"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Dipesh79\\LaravelMailLogViewer\\LaravelMailLogViewerServiceProvider"
+            ]
+        }
+    }
+}
