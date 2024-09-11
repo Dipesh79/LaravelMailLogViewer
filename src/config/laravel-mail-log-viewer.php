@@ -27,4 +27,11 @@ return [
      *
      */
     'primary-color' => '#ff2d20',
+
+    /**
+     * Middleware configuration
+     *
+     * The configuration for the middleware for the mail log viewer
+     */
+    'middleware' => ['web'],
 ];
