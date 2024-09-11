@@ -290,8 +290,8 @@
 
 </div>
 <footer class="lmv-footer">
-    <p>&copy; {{ date('Y') }} Laravel Mail Log Viewer. <a href="https://github.com/Dipesh79/LaravelMailLogViewer"
-                                                  target="_blank">GitHub Repository</a></p>
+    <p>&copy; {{ date('Y') }} <a href="https://github.com/Dipesh79/LaravelMailLogViewer"
+                                                  target="_blank">Laravel Mail Log Viewer.</a></p>
 </footer>
 <script>
     // Add click event listeners to all email items
