@@ -17,7 +17,7 @@ return [
      * This specifies the number of items per page.
      *
      */
-    'pagination' => 6,
+    'pagination' => 5,
 
     /**
      * Primary color configuration

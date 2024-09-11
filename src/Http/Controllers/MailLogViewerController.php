@@ -16,9 +16,13 @@ class MailLogViewerController extends Controller
      */
     public function index(): View
     {
-        $rawEmails = $this->extractEmailsFromLog();
+        $rawEmails = $this->extractEmailsFromLogs();
         $emails = array_map([$this, 'parseEmail'], $rawEmails);
-        $emails = array_reverse($emails);
+
+        // Sort emails by timestamp
+        usort($emails, function ($a, $b) {
+            return $b['timestamp'] <=> $a['timestamp'];
+        });
 
         $emailsCollection = collect($emails);
 
@@ -32,22 +36,23 @@ class MailLogViewerController extends Controller
     }
 
     /**
-     * Extract emails from the log file.
+     * Extract emails from multiple log files.
      *
      * @return array
      */
-    private function extractEmailsFromLog(): array
+    private function extractEmailsFromLogs(): array
     {
-        $logPath = storage_path('logs/laravel.log');
-        if (!File::exists($logPath)) {
-            return [];
+        $logDirectory = storage_path('logs');
+        $logFiles = File::files($logDirectory);
+        $emails = [];
+
+        foreach ($logFiles as $logFile) {
+            $logContent = File::get($logFile);
+            $pattern = '/From:.*?--\w+--/s';
+            preg_match_all($pattern, $logContent, $matches);
+            $emails = array_merge($emails, array_unique($matches[0]));
         }
-
-        $logContent = File::get($logPath);
-        $pattern = '/From:.*?--\w+--/s';
-        preg_match_all($pattern, $logContent, $matches);
-
-        return array_unique($matches[0]);
+        return $emails;
     }
 
     /**
@@ -69,6 +74,9 @@ class MailLogViewerController extends Controller
         preg_match('/Content-Type: text\/html;.*?\r\n\r\n(.*?)\r\n--/s', $bodyPart, $matches);
         $htmlBody = $matches[1] ?? '';
 
-        return ['headers' => $headers, 'body' => $htmlBody];
+        // Extract timestamp from the Date header
+        $timestamp = isset($headers['Date']) ? strtotime($headers['Date']) : time();
+
+        return ['headers' => $headers, 'body' => $htmlBody, 'timestamp' => $timestamp];
     }
 }
