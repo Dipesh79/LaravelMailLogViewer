@@ -249,15 +249,16 @@
     <div class="lmv-email-list">
         @forelse($emails as $key=>$email)
             <div class="lmv-email-item {{$key==0 ? 'selected':''}}"
-                 data-subject="{{ $email['headers']['Subject'] }}"
-                 data-from="{{ $email['headers']['From'] }}"
-                 data-to="{{ $email['headers']['To'] }}"
-                 data-date="{{ \Carbon\Carbon::parse($email['headers']['Date'])->format('D, d M Y h:i:s A') }}"
-                 data-body="{{ $email['body'] }}">
-                <h3>Subject: {{\Illuminate\Support\Str::limit($email['headers']['Subject'],20)}}</h3>
-                <p>From: {{$email['headers']['From']}}</p>
-                <p>To: {{$email['headers']['To']}}</p>
-                <span>{{\Carbon\Carbon::parse($email['headers']['Date'])->format('D, d M Y h:i:s A')}}</span>
+                 data-subject="{{ $email['headers']['Subject'] ?? 'No Subject' }}"
+                 data-from="{{ $email['headers']['From'] ?? '' }}"
+                 data-to="{{ $email['headers']['To'] ?? '' }}"
+                 data-date="{{ isset($email['headers']['Date']) ? \Carbon\Carbon::parse($email['headers']['Date'])->format('D, d M Y h:i:s A') : '' }}"
+                 data-file="{{ $email['file'] }}"
+                 data-offset="{{ $email['offset'] }}">
+                <h3>Subject: {{\Illuminate\Support\Str::limit($email['headers']['Subject'] ?? 'No Subject',20)}}</h3>
+                <p>From: {{$email['headers']['From'] ?? ''}}</p>
+                <p>To: {{$email['headers']['To'] ?? ''}}</p>
+                <span>{{ isset($email['headers']['Date']) ? \Carbon\Carbon::parse($email['headers']['Date'])->format('D, d M Y h:i:s A') : '' }}</span>
             </div>
         @empty
             <h2 class="no-emails-found">No emails found</h2>
@@ -266,20 +267,21 @@
             {{ $emails->links('emaillogviewer::pagination') }}
         </div>
     </div>
-    @php($emails = $emails->items())
-    @if(count($emails) > 0)
+    @php($emailItems = $emails->items())
+    @if(count($emailItems) > 0)
+        @php($first = $emailItems[array_key_first($emailItems)])
         <div class="lmv-email-content">
             <div class="lmv-email-header">
                 <div>
-                    <h2 id="email-subject">{{ $emails[array_key_first($emails)]['headers']['Subject'] }}</h2>
-                    <p id="email-from">From: {{ $emails[array_key_first($emails)]['headers']['From'] }}</p>
-                    <p id="email-to">To: {{ $emails[array_key_first($emails)]['headers']['To'] }}</p>
+                    <h2 id="email-subject">{{ $first['headers']['Subject'] ?? 'No Subject' }}</h2>
+                    <p id="email-from">From: {{ $first['headers']['From'] ?? '' }}</p>
+                    <p id="email-to">To: {{ $first['headers']['To'] ?? '' }}</p>
                     <p id="email-date">
-                        Date: {{ \Carbon\Carbon::parse($emails[array_key_first($emails)]['headers']['Date'])->format('D, d M Y h:i:s A') }}</p>
+                        Date: {{ isset($first['headers']['Date']) ? \Carbon\Carbon::parse($first['headers']['Date'])->format('D, d M Y h:i:s A') : '' }}</p>
                 </div>
             </div>
             <div class="lmv-email-body" id="email-body">
-                <p>{!! $emails[array_key_first($emails)]['body'] !!}</p>
+                <p>Loading…</p>
             </div>
         </div>
     @else
@@ -294,6 +296,30 @@
                                                   target="_blank">Laravel Mail Log Viewer.</a></p>
 </footer>
 <script>
+    const showUrl = @json(route('email.logs.show'));
+
+    /**
+     * Fetch and display the body of a single email.
+     */
+    function loadEmail(file, offset) {
+        document.getElementById('email-body').innerHTML = '<p>Loading…</p>';
+        const url = showUrl + '?file=' + encodeURIComponent(file) + '&offset=' + encodeURIComponent(offset);
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const headers = data.headers || {};
+                document.getElementById('email-subject').innerText = headers.Subject || 'No Subject';
+                document.getElementById('email-from').innerText = 'From: ' + (headers.From || '');
+                document.getElementById('email-to').innerText = 'To: ' + (headers.To || '');
+                document.getElementById('email-date').innerText = 'Date: ' + (headers.Date || '');
+                document.getElementById('email-body').innerHTML = data.body || '<p>No HTML body available.</p>';
+                updateLinksToOpenInNewTab();
+            })
+            .catch(() => {
+                document.getElementById('email-body').innerHTML = '<p>Failed to load email body.</p>';
+            });
+    }
+
     // Add click event listeners to all email items
     document.querySelectorAll('.lmv-email-item').forEach(item => {
         item.addEventListener('click', function () {
@@ -305,15 +331,8 @@
             // Add 'selected' class to clicked item
             this.classList.add('selected');
 
-            // Update email content
-            document.getElementById('email-subject').innerText = this.dataset.subject;
-            document.getElementById('email-from').innerText = 'From: ' + this.dataset.from;
-            document.getElementById('email-to').innerText = 'To: ' + this.dataset.to;
-            document.getElementById('email-date').innerText = 'Date: ' + this.dataset.date;
-            document.getElementById('email-body').innerHTML = this.dataset.body;
-
-            // Add target="_blank" to all links in the email body
-            updateLinksToOpenInNewTab();
+            // Load the email body
+            loadEmail(this.dataset.file, this.dataset.offset);
         });
     });
 
@@ -324,11 +343,7 @@
         const firstEmailItem = document.querySelector('.lmv-email-item');
         if (firstEmailItem && !document.querySelector('.lmv-email-item.selected')) {
             firstEmailItem.classList.add('selected');
-            document.getElementById('email-subject').innerText = firstEmailItem.dataset.subject;
-            document.getElementById('email-from').innerText = 'From: ' + firstEmailItem.dataset.from;
-            document.getElementById('email-to').innerText = 'To: ' + firstEmailItem.dataset.to;
-            document.getElementById('email-date').innerText = 'Date: ' + firstEmailItem.dataset.date;
-            document.getElementById('email-body').innerHTML = firstEmailItem.dataset.body;
+            loadEmail(firstEmailItem.dataset.file, firstEmailItem.dataset.offset);
         }
     }
 

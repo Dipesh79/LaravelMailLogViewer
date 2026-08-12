@@ -6,7 +6,6 @@ return [
      *
      * The configuration for the route of the package.
      * This specifies the URL for the dashboard.
-     *
      */
     'dashboard_url' => '/home',
 
@@ -15,7 +14,6 @@ return [
      *
      * The configuration for the pagination for the mail log viewer.
      * This specifies the number of items per page.
-     *
      */
     'pagination' => 5,
 
@@ -24,7 +22,6 @@ return [
      *
      * The configuration for the primary color for the mail log viewer.
      * This specifies the primary color used in the UI.
-     *
      */
     'primary-color' => '#ff2d20',
 
