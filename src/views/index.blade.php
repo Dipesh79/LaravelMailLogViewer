@@ -159,8 +159,10 @@
 
         /* Style for the email body in the content container */
         .lmv-email-body {
-            font-size: 16px;
-            line-height: 1.6;
+            width: 100%;
+            height: 100%;
+            min-height: 200px;
+            border: none;
         }
 
         /* Media query for larger screens */
@@ -280,9 +282,7 @@
                         Date: {{ isset($first['headers']['Date']) ? \Carbon\Carbon::parse($first['headers']['Date'])->format('D, d M Y h:i:s A') : '' }}</p>
                 </div>
             </div>
-            <div class="lmv-email-body" id="email-body">
-                <p>Loading…</p>
-            </div>
+            <iframe class="lmv-email-body" id="email-body" sandbox="" srcdoc="<p>Loading…</p>"></iframe>
         </div>
     @else
         <div class="lmv-email-content">
@@ -302,7 +302,8 @@
      * Fetch and display the body of a single email.
      */
     function loadEmail(file, offset) {
-        document.getElementById('email-body').innerHTML = '<p>Loading…</p>';
+        const frame = document.getElementById('email-body');
+        frame.srcdoc = '<p>Loading…</p>';
         const url = showUrl + '?file=' + encodeURIComponent(file) + '&offset=' + encodeURIComponent(offset);
         fetch(url)
             .then(response => response.json())
@@ -312,11 +313,10 @@
                 document.getElementById('email-from').innerText = 'From: ' + (headers.From || '');
                 document.getElementById('email-to').innerText = 'To: ' + (headers.To || '');
                 document.getElementById('email-date').innerText = 'Date: ' + (headers.Date || '');
-                document.getElementById('email-body').innerHTML = data.body || '<p>No HTML body available.</p>';
-                updateLinksToOpenInNewTab();
+                frame.srcdoc = addTargetBlankToLinks(data.body || '<p>No HTML body available.</p>');
             })
             .catch(() => {
-                document.getElementById('email-body').innerHTML = '<p>Failed to load email body.</p>';
+                frame.srcdoc = '<p>Failed to load email body.</p>';
             });
     }
 
@@ -340,26 +340,32 @@
      * Function to select the first email item if none are selected
      */
     function selectFirstEmailItem() {
-        const firstEmailItem = document.querySelector('.lmv-email-item');
-        if (firstEmailItem && !document.querySelector('.lmv-email-item.selected')) {
-            firstEmailItem.classList.add('selected');
-            loadEmail(firstEmailItem.dataset.file, firstEmailItem.dataset.offset);
+        let item = document.querySelector('.lmv-email-item.selected');
+        if (!item) {
+            item = document.querySelector('.lmv-email-item');
+            if (item) {
+                item.classList.add('selected');
+            }
+        }
+        if (item) {
+            loadEmail(item.dataset.file, item.dataset.offset);
         }
     }
 
     /**
-     * Function to add target="_blank" to all links in the email body
+     * Parse the email body HTML and set target="_blank" on all links,
+     * without inserting it into the page (avoids running any embedded script).
      */
-    function updateLinksToOpenInNewTab() {
-        document.querySelectorAll('#email-body a').forEach(link => {
+    function addTargetBlankToLinks(html) {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        doc.querySelectorAll('a').forEach(link => {
             link.setAttribute('target', '_blank');
         });
+        return doc.documentElement.outerHTML;
     }
 
     // Call the function when the page loads
     window.onload = selectFirstEmailItem;
-    // Add target="_blank" to all links in the email body
-    updateLinksToOpenInNewTab();
 </script>
 </body>
 </html>

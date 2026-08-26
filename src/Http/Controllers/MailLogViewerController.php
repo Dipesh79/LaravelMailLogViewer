@@ -214,6 +214,8 @@ class MailLogViewerController extends Controller
             fseek($handle, $offset);
 
             $raw = '';
+            $isFirstLine = true;
+
             while (! feof($handle)) {
                 $line = fgets($handle);
 
@@ -221,12 +223,18 @@ class MailLogViewerController extends Controller
                     break;
                 }
 
-                if (preg_match('/^--[\w-]+--/', $line)) {
-                    $raw .= $line;
+                $content = $this->stripLogPrefix($line);
+
+                if (! $isFirstLine && str_starts_with($content, 'From:')) {
                     break;
                 }
 
+                $isFirstLine = false;
                 $raw .= $line;
+
+                if (preg_match('/^--[\w-]+--/', $line)) {
+                    break;
+                }
             }
 
             return $raw;
